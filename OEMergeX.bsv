@@ -1,22 +1,22 @@
 import Vector::*;
-import OEMerge4::*;
+import OEMergeY::*;
 
-`define n 8
+`define n X
 
-`define m 4
+`define m Y
 
 `define integer 32
 
-interface OEMerge8;
+interface OEMergeX;
   method Action give(Vector#(`n, Reg#(Bit#(`integer))) a);
   method Vector#(`n, Reg#(Bit#(`integer))) take();
 endinterface
 
-module mkOEMerge8(OEMerge8);
+module mkOEMergeX(OEMergeX);
   Vector#(`n, Reg#(Bit#(`integer))) numbers <- replicateM(mkReg(0));
   Reg#(int) state <- mkReg(0);
-  OEMerge4 half1 <- mkOEMerge4();
-  OEMerge4 half2 <- mkOEMerge4();
+  OEMergeY half1 <- mkOEMergeY();
+  OEMergeY half2 <- mkOEMergeY();
 
   rule split(state == 1);
   	for(Integer i = 1; i < `m; i = i+1)

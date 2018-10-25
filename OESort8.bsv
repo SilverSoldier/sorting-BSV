@@ -1,5 +1,6 @@
 import Vector::*;
-import OEMerge4::*;
+import OEMerge8::*;
+import OESort4::*;
 
 `define n 8
 
@@ -7,38 +8,26 @@ import OEMerge4::*;
 
 `define integer 32
 
-interface OEMerge8;
+interface OESort8;
   method Action give(Vector#(`n, Reg#(Bit#(`integer))) a);
   method Vector#(`n, Reg#(Bit#(`integer))) take();
 endinterface
 
-module mkOEMerge8(OEMerge8);
+module mkOESort8(OESort8);
   Vector#(`n, Reg#(Bit#(`integer))) numbers <- replicateM(mkReg(0));
   Reg#(int) state <- mkReg(0);
-  OEMerge4 half1 <- mkOEMerge4();
-  OEMerge4 half2 <- mkOEMerge4();
+  OESort4 half1 <- mkOESort4();
+  OESort4 half2 <- mkOESort4();
+  OEMerge8 merger <- mkOEMerge8();
 
   rule split(state == 1);
-  	for(Integer i = 1; i < `m; i = i+1)
-  	  numbers[i] <= numbers[2*i];
-
-  	for(Integer i = `m; i < `n - 1; i = i+1)
-  	  numbers[i] <= numbers[(i - `m)*2 + 1];
-
-  	state <= 2;
-  endrule
-
-  rule sort_give(state == 2);
-
-	// Sort the first and second halves separately
 	half1.give(take(numbers));
 	half2.give(takeAt(`m, numbers));
 
-	state <= 3;
-
+	state <= 2;
   endrule
 
-  rule sort_take(state == 3);
+  rule sort_take(state == 2);
   	let x = half1.take();
   	let y = half2.take();
 
@@ -51,15 +40,18 @@ module mkOEMerge8(OEMerge8);
   	  numbers[i] <= y[i - `m];
   	end
 
+  	state <= 3;
+  endrule
+
+  rule merge_give(state == 3);
+  	merger.give(numbers); 
   	state <= 4;
   endrule
 
-  rule merge(state == 4);
-  	Integer j = 1;
-  	for(Integer i = 1; i < `m; i = i+1) begin
-  	  numbers[j] <= min(numbers[i], numbers[i+`m-1]);
-  	  numbers[j+1] <= max(numbers[i], numbers[i+`m-1]);
-  	  j = j+2;
+  rule merge_take(state == 4);
+  	let x = merger.take();
+  	for(Integer i = 0; i < `n; i = i + 1) begin
+  	  numbers[i] <= x[i];
   	end
   	state <= 5;
   endrule
